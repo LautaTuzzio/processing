@@ -2,12 +2,15 @@ import gab.opencv.*; // Importa la libreria OpenCV para vision por computadora
 import processing.video.*; // Importa la libreria de video para capturar imagenes de la camara
 import java.util.*; // Importa utilidades de Java, como ArrayList
 import java.awt.Rectangle; // Importa la clase Rectangle de AWT para representar rectangulos
+import processing.serial.*; // Importa la libreria para comunicacion serial (Bluetooth)
+import java.nio.ByteBuffer; // Para convertir enteros a bytes
 
 // Variables globales importantes
 
 Capture cam; // Objeto para capturar video de la camara
 OpenCV opencv; // Objeto OpenCV para procesamiento de imagenes
 PImage objectMask; // Imagen que actuara como mascara para el objeto detectado (el guante)
+Serial myPort;  // Objeto para la comunicacion serial con el ESP32
 
 // Variable para el factor de suavizado del centro de la mano
 PVector smoothedHandCenter = new PVector(); // Almacena la posicion suavizada del centro de la mano
@@ -23,6 +26,30 @@ float smoothingFactor = 0.3; // Controla que tan rapido el punto rojo sigue el m
  */
 void setup() {
   size(640, 480); // Establece el tamaño de la ventana de visualizacion en 640x480 pixeles.
+  
+  // Inicializar la comunicacion serial con el ESP32
+  // Reemplaza "COMX" con el puerto serial correcto de tu ESP32
+  // En Windows, es algo como "COM3", "COM4", etc.
+  // En Mac/Linux, es algo como "/dev/tty.ESP32-ESP32SPP"
+  String portName = "";
+  
+  // Listar los puertos disponibles
+  printArray(Serial.list());
+  
+  // Buscar el puerto del ESP32 (ajusta esto según tu configuración)
+  for (String port : Serial.list()) {
+    if (port.contains("ESP32") || port.contains("tty") || port.contains("COM")) {
+      portName = port;
+      break;
+    }
+  }
+  
+  if (portName.length() > 0) {
+    myPort = new Serial(this, portName, 115200); // 115200 es la velocidad de baudios típica para ESP32
+    println("Conectado a " + portName);
+  } else {
+    println("No se pudo encontrar el puerto del ESP32. Conecta el dispositivo e intenta nuevamente.");
+  }
 
   String[] cameras = Capture.list(); // Obtiene una lista de todas las camaras disponibles en el sistema.
 
@@ -211,6 +238,30 @@ void draw() {
     // Linea al centro de la pantalla
     stroke(255, 255, 0); // Establece el color de la linea en amarillo.
     line(centerX, centerY, smoothedHandCenter.x, smoothedHandCenter.y); // Dibuja una linea desde el centro de la pantalla hasta el centro de la mano suavizado.
+    
+    // Enviar coordenadas al ESP32
+    if (myPort != null) {
+      // Mapear las coordenadas para que sean más manejables (por ejemplo, -100 a 100)
+      int mappedX = (int)map(offsetX, -width/2, width/2, -100, 100);
+      int mappedY = (int)map(offsetY, -height/2, height/2, -100, 100);
+      
+      // Crear un array de bytes con las coordenadas
+      // Formato: 'X' (1 byte) + valorX (2 bytes) + 'Y' (1 byte) + valorY (2 bytes)
+      byte[] data = new byte[6];
+      data[0] = 'X';
+      data[1] = (byte)((mappedX >> 8) & 0xFF);  // Byte alto de X
+      data[2] = (byte)(mappedX & 0xFF);         // Byte bajo de X
+      data[3] = 'Y';
+      data[4] = (byte)((mappedY >> 8) & 0xFF);  // Byte alto de Y
+      data[5] = (byte)(mappedY & 0xFF);         // Byte bajo de Y
+      
+      // Enviar los datos
+      myPort.write(data);
+      
+      // Mostrar las coordenadas mapeadas en pantalla
+      fill(0, 255, 0);
+      text("Enviando a ESP32 - X: " + mappedX + ", Y: " + mappedY, 20, 70);
+    }
   } else {
     fill(255, 0, 0); // Establece el color del texto en rojo.
     textSize(24); // Establece el tamaño de la fuente del texto en 24 pixeles.
