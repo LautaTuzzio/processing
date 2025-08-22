@@ -3,62 +3,130 @@
 
 BluetoothSerial SerialBT;
 
-// Pines de los LEDs
-const int BOTTOM_PIN = 19;
-const int LEFT_PIN = 21;
-const int RIGHT_PIN = 22;
-const int TOP_PIN = 23;
+// Pines de las 4 ruedas (motores)
+#define pin_adelante_r1 25    // Rueda 1 - adelante
+#define pin_atras_r1 26       // Rueda 1 - atrás
+#define pin_adelante_r2 33    // Rueda 2 - adelante  
+#define pin_atras_r2 32       // Rueda 2 - atrás
+#define pin_adelante_r3 19    // Rueda 3 - adelante
+#define pin_atras_r3 21       // Rueda 3 - atrás
+#define pin_adelante_r4 22    // Rueda 4 - adelante
+#define pin_atras_r4 23       // Rueda 4 - atrás
 
-int currentLED = 0;
+int currentCommand = 0;
 unsigned long lastReceived = 0;
 const unsigned long TIMEOUT = 5000;
 
-void turnOffAllLEDs() {
-  digitalWrite(TOP_PIN, LOW);
-  digitalWrite(RIGHT_PIN, LOW);
-  digitalWrite(BOTTOM_PIN, LOW);
-  digitalWrite(LEFT_PIN, LOW);
+void stopAllMotors() {
+  // Detener todas las ruedas
+  digitalWrite(pin_adelante_r1, LOW);
+  digitalWrite(pin_atras_r1, LOW);
+  digitalWrite(pin_adelante_r2, LOW);
+  digitalWrite(pin_atras_r2, LOW);
+  digitalWrite(pin_adelante_r3, LOW);
+  digitalWrite(pin_atras_r3, LOW);
+  digitalWrite(pin_adelante_r4, LOW);
+  digitalWrite(pin_atras_r4, LOW);
+}
+
+void moveForward() {
+  // Todas las ruedas hacia adelante
+  digitalWrite(pin_adelante_r1, HIGH);
+  digitalWrite(pin_atras_r1, LOW);
+  digitalWrite(pin_adelante_r2, HIGH);
+  digitalWrite(pin_atras_r2, LOW);
+  digitalWrite(pin_adelante_r3, HIGH);
+  digitalWrite(pin_atras_r3, LOW);
+  digitalWrite(pin_adelante_r4, HIGH);
+  digitalWrite(pin_atras_r4, LOW);
+}
+
+void moveBackward() {
+  // Todas las ruedas hacia atrás
+  digitalWrite(pin_adelante_r1, LOW);
+  digitalWrite(pin_atras_r1, HIGH);
+  digitalWrite(pin_adelante_r2, LOW);
+  digitalWrite(pin_atras_r2, HIGH);
+  digitalWrite(pin_adelante_r3, LOW);
+  digitalWrite(pin_atras_r3, HIGH);
+  digitalWrite(pin_adelante_r4, LOW);
+  digitalWrite(pin_atras_r4, HIGH);
+}
+
+void turnLeft() {
+  // Ruedas izquierdas (r1, r3) hacia atrás, derechas (r2, r4) hacia adelante
+  digitalWrite(pin_adelante_r1, LOW);
+  digitalWrite(pin_atras_r1, HIGH);
+  digitalWrite(pin_adelante_r2, HIGH);
+  digitalWrite(pin_atras_r2, LOW);
+  digitalWrite(pin_adelante_r3, LOW);
+  digitalWrite(pin_atras_r3, HIGH);
+  digitalWrite(pin_adelante_r4, HIGH);
+  digitalWrite(pin_atras_r4, LOW);
+}
+
+void turnRight() {
+  // Ruedas derechas (r2, r4) hacia atrás, izquierdas (r1, r3) hacia adelante
+  digitalWrite(pin_adelante_r1, HIGH);
+  digitalWrite(pin_atras_r1, LOW);
+  digitalWrite(pin_adelante_r2, LOW);
+  digitalWrite(pin_atras_r2, HIGH);
+  digitalWrite(pin_adelante_r3, HIGH);
+  digitalWrite(pin_atras_r3, LOW);
+  digitalWrite(pin_adelante_r4, LOW);
+  digitalWrite(pin_atras_r4, HIGH);
 }
 
 void processCommand(int cmd) {
-  turnOffAllLEDs();
+  stopAllMotors();
   
-  // Handle directions
-  if (cmd == 1) { // Top-Left
-    digitalWrite(TOP_PIN, HIGH);
-    digitalWrite(LEFT_PIN, HIGH);
-  } else if (cmd == 2) { // Top-Right
-    digitalWrite(TOP_PIN, HIGH);
-    digitalWrite(RIGHT_PIN, HIGH);
-  } else if (cmd == 3) { // Bottom-Left
-    digitalWrite(BOTTOM_PIN, HIGH);
-    digitalWrite(LEFT_PIN, HIGH);
-  } else if (cmd == 4) { // Bottom-Right
-    digitalWrite(BOTTOM_PIN, HIGH);
-    digitalWrite(RIGHT_PIN, HIGH);
-  } else if (cmd == 5) { // Top
-    digitalWrite(TOP_PIN, HIGH);
-  } else if (cmd == 6) { // Right
-    digitalWrite(RIGHT_PIN, HIGH);
-  } else if (cmd == 7) { // Bottom
-    digitalWrite(BOTTOM_PIN, HIGH);
-  } else if (cmd == 8) { // Left
-    digitalWrite(LEFT_PIN, HIGH);
+  // Procesar comandos de dirección
+  if (cmd == 1) { // Top-Left (Adelante + Izquierda)
+    moveForward();
+    // Podrías implementar un giro diagonal aquí si es necesario
+  } else if (cmd == 2) { // Top-Right (Adelante + Derecha)
+    moveForward();
+    // Podrías implementar un giro diagonal aquí si es necesario
+  } else if (cmd == 3) { // Bottom-Left (Atrás + Izquierda)
+    moveBackward();
+  } else if (cmd == 4) { // Bottom-Right (Atrás + Derecha)
+    moveBackward();
+  } else if (cmd == 5) { // Top (Adelante)
+    moveForward();
+  } else if (cmd == 6) { // Right (Girar Derecha)
+    turnRight();
+  } else if (cmd == 7) { // Bottom (Atrás)
+    moveBackward();
+  } else if (cmd == 8) { // Left (Girar Izquierda)
+    turnLeft();
   }
   
-  currentLED = cmd;
+  currentCommand = cmd;
 }
 
 void setup() {
   Serial.begin(115200);
-  pinMode(TOP_PIN, OUTPUT);
-  pinMode(RIGHT_PIN, OUTPUT);
-  pinMode(BOTTOM_PIN, OUTPUT);
-  pinMode(LEFT_PIN, OUTPUT);
-  turnOffAllLEDs();
-
-  SerialBT.begin("ESP32_LED_Control");
-  Serial.println("Bluetooth listo como 'ESP32_LED_Control'");
+  
+  // Configurar todos los pines como salida
+  pinMode(pin_adelante_r1, OUTPUT);
+  pinMode(pin_atras_r1, OUTPUT);
+  pinMode(pin_adelante_r2, OUTPUT);
+  pinMode(pin_atras_r2, OUTPUT);
+  pinMode(pin_adelante_r3, OUTPUT);
+  pinMode(pin_atras_r3, OUTPUT);
+  pinMode(pin_adelante_r4, OUTPUT);
+  pinMode(pin_atras_r4, OUTPUT);
+  
+  // Pines de entrada (del código original)
+  pinMode(34, INPUT);
+  pinMode(35, INPUT);
+  
+  // Inicializar motores apagados
+  stopAllMotors();
+  
+  // Inicializar Bluetooth
+  SerialBT.begin("ESP32_Car_Control");
+  Serial.println("Bluetooth listo como 'ESP32_Car_Control'");
 }
 
 void loop() {
@@ -66,49 +134,52 @@ void loop() {
     int8_t x = SerialBT.read();
     int8_t y = SerialBT.read();
     lastReceived = millis();
-
+    
     int cmd = 0;
     
-    // Simple threshold-based direction detection
-    const int threshold = 20;  // Adjust this value to change sensitivity
+    // Detección de dirección basada en umbrales
+    const int threshold = 20;  // Ajusta este valor para cambiar la sensibilidad
     
     bool top = y < -threshold;
     bool bottom = y > threshold;
     bool left = x < -threshold;
     bool right = x > threshold;
     
-    // Diagonal directions (combine two directions)
+    // Direcciones diagonales (combinan dos direcciones)
     if (top && left) cmd = 1;        // Top-Left
     else if (top && right) cmd = 2;  // Top-Right
     else if (bottom && left) cmd = 3; // Bottom-Left
     else if (bottom && right) cmd = 4; // Bottom-Right
-    // Straight directions
-    else if (top) cmd = 5;    // Top
-    else if (right) cmd = 6;  // Right
-    else if (bottom) cmd = 7; // Bottom
-    else if (left) cmd = 8;   // Left
-
+    // Direcciones rectas
+    else if (top) cmd = 5;    // Top (Adelante)
+    else if (right) cmd = 6;  // Right (Girar Derecha)
+    else if (bottom) cmd = 7; // Bottom (Atrás)
+    else if (left) cmd = 8;   // Left (Girar Izquierda)
+    
     processCommand(cmd);
+    
+    // Debug: mostrar información
     const char* direction = "";
-  switch(cmd) {
-    case 1: direction = "Top-Left"; break;
-    case 2: direction = "Top-Right"; break;
-    case 3: direction = "Bottom-Left"; break;
-    case 4: direction = "Bottom-Right"; break;
-    case 5: direction = "Top"; break;
-    case 6: direction = "Right"; break;
-    case 7: direction = "Bottom"; break;
-    case 8: direction = "Left"; break;
-    default: direction = "Center";
+    switch(cmd) {
+      case 1: direction = "Adelante-Izquierda"; break;
+      case 2: direction = "Adelante-Derecha"; break;
+      case 3: direction = "Atrás-Izquierda"; break;
+      case 4: direction = "Atrás-Derecha"; break;
+      case 5: direction = "Adelante"; break;
+      case 6: direction = "Girar Derecha"; break;
+      case 7: direction = "Atrás"; break;
+      case 8: direction = "Girar Izquierda"; break;
+      default: direction = "Parado";
+    }
+    Serial.printf("X: %d Y: %d → %s (Comando %d)\n", x, y, direction, cmd);
   }
-  Serial.printf("X: %d Y: %d → %s (LED %d)\n", x, y, direction, cmd);
+  
+  // Timeout: si no se reciben comandos, detener el auto
+  if (millis() - lastReceived > TIMEOUT && currentCommand != 0) {
+    stopAllMotors();
+    currentCommand = 0;
+    Serial.println("Timeout, deteniendo auto.");
   }
-
-  if (millis() - lastReceived > TIMEOUT && currentLED != 0) {
-    turnOffAllLEDs();
-    currentLED = 0;
-    Serial.println("Timeout, apagando LEDs.");
-  }
-
+  
   delay(20);
 }
