@@ -16,7 +16,6 @@ int lastX = -9999, lastY = -9999;
 int sendInterval = 100; // ms
 long lastSendTime = 0;
 
-// CAMBIA ESTA VARIABLE POR EL PUERTO DE TU BLUETOOTH ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
 String puertoBluetooth = "COM7"; // COMX ← CAMBIAR POR TU PUERTO BLUETOOTH (Ej: "COM4")
 
 void setup() {
