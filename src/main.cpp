@@ -3,7 +3,6 @@
 
 BluetoothSerial SerialBT;
 
-// ----------------------------
 // Pines puente H delantero (ruedas delanteras)
 #define IN1_DEL 15 // Frontal - Izquierda Adelante
 #define IN4_DEL 16 // Frontal - Izquierda Atras
@@ -15,15 +14,12 @@ BluetoothSerial SerialBT;
 #define IN2_TRA 5  // Trasero - Izquierda Atras
 #define IN3_TRA 18 // Trasero - Derecha Adelante
 #define IN4_TRA 19 // Trasero - Derecha Atras
-// ----------------------------
 
 int currentCmd = 0;
 unsigned long lastReceived = 0;
 const unsigned long TIMEOUT = 1000;
 
-// ----------------------------
 // FUNCIONES DE MOVIMIENTO
-// ----------------------------
 void adelante() {
   digitalWrite(IN1_DEL, HIGH);
   digitalWrite(IN2_DEL, LOW);
@@ -84,11 +80,9 @@ void frenar() {
   digitalWrite(IN4_TRA, LOW);
 }
 
-// ----------------------------
 // PROCESAR COMANDO
-// ----------------------------
 void processCommand(int cmd) {
-  frenar(); // Primero detiene todo
+  frenar();
 
   switch (cmd) {
     case 1: adelante(); izquierda(); break;
@@ -134,9 +128,9 @@ void loop() {
     Serial.printf("Coords → X: %d | Y: %d\n", x, y);
 
         int cmd = 0;
-    const int threshold = 50; // 🔹 menos sensible
+    const int threshold = 50;
 
-    // invertimos arriba y abajo
+
     bool top = y > threshold;     
     bool bottom = y < -threshold; 
     bool left = x < -threshold;
@@ -156,23 +150,23 @@ void loop() {
 
     const char* direction = "";
     switch (cmd) {
-      case 1: direction = "↖ Arriba-Izquierda"; break;
-      case 2: direction = "↗ Arriba-Derecha"; break;
-      case 3: direction = "↙ Abajo-Izquierda"; break;
-      case 4: direction = "↘ Abajo-Derecha"; break;
-      case 5: direction = "↑ Arriba"; break;
-      case 6: direction = "→ Derecha"; break;
-      case 7: direction = "↓ Abajo"; break;
-      case 8: direction = "← Izquierda"; break;
-      default: direction = "■ Detenido";
+      case 1: direction = "Arriba-Izquierda"; break;
+      case 2: direction = "Arriba-Derecha"; break;
+      case 3: direction = "Abajo-Izquierda"; break;
+      case 4: direction = "Abajo-Derecha"; break;
+      case 5: direction = "Arriba"; break;
+      case 6: direction = "Derecha"; break;
+      case 7: direction = "Abajo"; break;
+      case 8: direction = "Izquierda"; break;
+      default: direction = "Detenido";
     }
-    Serial.printf("Dirección detectada: %s (CMD %d)\n", direction, cmd);
+    Serial.printf("Direccion: %s (CMD %d)\n", direction, cmd);
   }
 
   if (millis() - lastReceived > TIMEOUT && currentCmd != 0) {
     frenar();
     currentCmd = 0;
-    Serial.println("⏱ Timeout → Frenando auto.");
+    Serial.println("Timeout");
   }
 
   delay(20);
