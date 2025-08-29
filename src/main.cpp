@@ -3,130 +3,125 @@
 
 BluetoothSerial SerialBT;
 
-// Pines de las 4 ruedas (motores)
-#define pin_adelante_r1 25    // Rueda 1 - adelante
-#define pin_atras_r1 26       // Rueda 1 - atrás
-#define pin_adelante_r2 33    // Rueda 2 - adelante  
-#define pin_atras_r2 32       // Rueda 2 - atrás
-#define pin_adelante_r3 19    // Rueda 3 - adelante
-#define pin_atras_r3 21       // Rueda 3 - atrás
-#define pin_adelante_r4 22    // Rueda 4 - adelante
-#define pin_atras_r4 23       // Rueda 4 - atrás
+// ----------------------------
+// Pines puente H delantero (ruedas delanteras)
+#define IN1_DEL 15 // Frontal - Izquierda Adelante
+#define IN4_DEL 16 // Frontal - Izquierda Atras
+#define IN2_DEL 2  // Frontal - Derecha Adelante
+#define IN3_DEL 4  // Frontal - Derecha Atras
 
-int currentCommand = 0;
+// Pines puente H trasero (ruedas traseras)
+#define IN1_TRA 17 // Trasero - Izquierda Adelante
+#define IN2_TRA 5  // Trasero - Izquierda Atras
+#define IN3_TRA 18 // Trasero - Derecha Adelante
+#define IN4_TRA 19 // Trasero - Derecha Atras
+// ----------------------------
+
+int currentCmd = 0;
 unsigned long lastReceived = 0;
-const unsigned long TIMEOUT = 5000;
+const unsigned long TIMEOUT = 1000;
 
-void stopAllMotors() {
-  // Detener todas las ruedas
-  digitalWrite(pin_adelante_r1, LOW);
-  digitalWrite(pin_atras_r1, LOW);
-  digitalWrite(pin_adelante_r2, LOW);
-  digitalWrite(pin_atras_r2, LOW);
-  digitalWrite(pin_adelante_r3, LOW);
-  digitalWrite(pin_atras_r3, LOW);
-  digitalWrite(pin_adelante_r4, LOW);
-  digitalWrite(pin_atras_r4, LOW);
+// ----------------------------
+// FUNCIONES DE MOVIMIENTO
+// ----------------------------
+void adelante() {
+  digitalWrite(IN1_DEL, HIGH);
+  digitalWrite(IN2_DEL, LOW);
+  digitalWrite(IN3_DEL, HIGH);
+  digitalWrite(IN4_DEL, LOW);
+
+  digitalWrite(IN1_TRA, HIGH);
+  digitalWrite(IN2_TRA, LOW);
+  digitalWrite(IN3_TRA, HIGH);
+  digitalWrite(IN4_TRA, LOW);
 }
 
-void moveForward() {
-  // Todas las ruedas hacia adelante
-  digitalWrite(pin_adelante_r1, HIGH);
-  digitalWrite(pin_atras_r1, LOW);
-  digitalWrite(pin_adelante_r2, HIGH);
-  digitalWrite(pin_atras_r2, LOW);
-  digitalWrite(pin_adelante_r3, HIGH);
-  digitalWrite(pin_atras_r3, LOW);
-  digitalWrite(pin_adelante_r4, HIGH);
-  digitalWrite(pin_atras_r4, LOW);
+void atras() {
+  digitalWrite(IN1_DEL, LOW);
+  digitalWrite(IN2_DEL, HIGH);
+  digitalWrite(IN3_DEL, LOW);
+  digitalWrite(IN4_DEL, HIGH);
+
+  digitalWrite(IN1_TRA, LOW);
+  digitalWrite(IN2_TRA, HIGH);
+  digitalWrite(IN3_TRA, LOW);
+  digitalWrite(IN4_TRA, HIGH);
 }
 
-void moveBackward() {
-  // Todas las ruedas hacia atrás
-  digitalWrite(pin_adelante_r1, LOW);
-  digitalWrite(pin_atras_r1, HIGH);
-  digitalWrite(pin_adelante_r2, LOW);
-  digitalWrite(pin_atras_r2, HIGH);
-  digitalWrite(pin_adelante_r3, LOW);
-  digitalWrite(pin_atras_r3, HIGH);
-  digitalWrite(pin_adelante_r4, LOW);
-  digitalWrite(pin_atras_r4, HIGH);
+void izquierda() {
+  digitalWrite(IN1_DEL, LOW);
+  digitalWrite(IN2_DEL, HIGH);
+  digitalWrite(IN3_DEL, HIGH);
+  digitalWrite(IN4_DEL, LOW);
+
+  digitalWrite(IN1_TRA, LOW);
+  digitalWrite(IN2_TRA, HIGH);
+  digitalWrite(IN3_TRA, HIGH);
+  digitalWrite(IN4_TRA, LOW);
 }
 
-void turnLeft() {
-  // Ruedas izquierdas (r1, r3) hacia atrás, derechas (r2, r4) hacia adelante
-  digitalWrite(pin_adelante_r1, LOW);
-  digitalWrite(pin_atras_r1, HIGH);
-  digitalWrite(pin_adelante_r2, HIGH);
-  digitalWrite(pin_atras_r2, LOW);
-  digitalWrite(pin_adelante_r3, LOW);
-  digitalWrite(pin_atras_r3, HIGH);
-  digitalWrite(pin_adelante_r4, HIGH);
-  digitalWrite(pin_atras_r4, LOW);
+void derecha() {
+  digitalWrite(IN1_DEL, HIGH);
+  digitalWrite(IN2_DEL, LOW);
+  digitalWrite(IN3_DEL, LOW);
+  digitalWrite(IN4_DEL, HIGH);
+
+  digitalWrite(IN1_TRA, HIGH);
+  digitalWrite(IN2_TRA, LOW);
+  digitalWrite(IN3_TRA, LOW);
+  digitalWrite(IN4_TRA, HIGH);
 }
 
-void turnRight() {
-  // Ruedas derechas (r2, r4) hacia atrás, izquierdas (r1, r3) hacia adelante
-  digitalWrite(pin_adelante_r1, HIGH);
-  digitalWrite(pin_atras_r1, LOW);
-  digitalWrite(pin_adelante_r2, LOW);
-  digitalWrite(pin_atras_r2, HIGH);
-  digitalWrite(pin_adelante_r3, HIGH);
-  digitalWrite(pin_atras_r3, LOW);
-  digitalWrite(pin_adelante_r4, LOW);
-  digitalWrite(pin_atras_r4, HIGH);
+void frenar() {
+  digitalWrite(IN1_DEL, LOW);
+  digitalWrite(IN2_DEL, LOW);
+  digitalWrite(IN3_DEL, LOW);
+  digitalWrite(IN4_DEL, LOW);
+
+  digitalWrite(IN1_TRA, LOW);
+  digitalWrite(IN2_TRA, LOW);
+  digitalWrite(IN3_TRA, LOW);
+  digitalWrite(IN4_TRA, LOW);
 }
 
+// ----------------------------
+// PROCESAR COMANDO
+// ----------------------------
 void processCommand(int cmd) {
-  stopAllMotors();
-  
-  // Procesar comandos de dirección
-  if (cmd == 1) { // Top-Left (Adelante + Izquierda)
-    moveForward();
-    // Podrías implementar un giro diagonal aquí si es necesario
-  } else if (cmd == 2) { // Top-Right (Adelante + Derecha)
-    moveForward();
-    // Podrías implementar un giro diagonal aquí si es necesario
-  } else if (cmd == 3) { // Bottom-Left (Atrás + Izquierda)
-    moveBackward();
-  } else if (cmd == 4) { // Bottom-Right (Atrás + Derecha)
-    moveBackward();
-  } else if (cmd == 5) { // Top (Adelante)
-    moveForward();
-  } else if (cmd == 6) { // Right (Girar Derecha)
-    turnRight();
-  } else if (cmd == 7) { // Bottom (Atrás)
-    moveBackward();
-  } else if (cmd == 8) { // Left (Girar Izquierda)
-    turnLeft();
+  frenar(); // Primero detiene todo
+
+  switch (cmd) {
+    case 1: adelante(); izquierda(); break;
+    case 2: adelante(); derecha(); break;
+    case 3: atras(); izquierda(); break;
+    case 4: atras(); derecha(); break;
+    case 5: adelante(); break;
+    case 6: derecha(); break;
+    case 7: atras(); break;
+    case 8: izquierda(); break;
+    default: frenar();
   }
-  
-  currentCommand = cmd;
+
+  currentCmd = cmd;
 }
 
 void setup() {
   Serial.begin(115200);
-  
-  // Configurar todos los pines como salida
-  pinMode(pin_adelante_r1, OUTPUT);
-  pinMode(pin_atras_r1, OUTPUT);
-  pinMode(pin_adelante_r2, OUTPUT);
-  pinMode(pin_atras_r2, OUTPUT);
-  pinMode(pin_adelante_r3, OUTPUT);
-  pinMode(pin_atras_r3, OUTPUT);
-  pinMode(pin_adelante_r4, OUTPUT);
-  pinMode(pin_atras_r4, OUTPUT);
-  
-  // Pines de entrada (del código original)
-  pinMode(34, INPUT);
-  pinMode(35, INPUT);
-  
-  // Inicializar motores apagados
-  stopAllMotors();
-  
-  // Inicializar Bluetooth
-  SerialBT.begin("ESP32_Car_Control");
-  Serial.println("Bluetooth listo como 'ESP32_Car_Control'");
+
+  pinMode(IN1_DEL, OUTPUT);
+  pinMode(IN2_DEL, OUTPUT);
+  pinMode(IN3_DEL, OUTPUT);
+  pinMode(IN4_DEL, OUTPUT);
+
+  pinMode(IN1_TRA, OUTPUT);
+  pinMode(IN2_TRA, OUTPUT);
+  pinMode(IN3_TRA, OUTPUT);
+  pinMode(IN4_TRA, OUTPUT);
+
+  frenar();
+
+  SerialBT.begin("estoy dormido");
+  Serial.println("Bluetooth listo como 'ESP32_CAR_Control'");
 }
 
 void loop() {
@@ -134,52 +129,51 @@ void loop() {
     int8_t x = SerialBT.read();
     int8_t y = SerialBT.read();
     lastReceived = millis();
-    
-    int cmd = 0;
-    
-    // Detección de dirección basada en umbrales
-    const int threshold = 20;  // Ajusta este valor para cambiar la sensibilidad
-    
-    bool top = y < -threshold;
-    bool bottom = y > threshold;
+
+    // Mostrar coordenadas crudas de la mano
+    Serial.printf("Coords → X: %d | Y: %d\n", x, y);
+
+        int cmd = 0;
+    const int threshold = 50; // 🔹 menos sensible
+
+    // invertimos arriba y abajo
+    bool top = y > threshold;     
+    bool bottom = y < -threshold; 
     bool left = x < -threshold;
     bool right = x > threshold;
-    
-    // Direcciones diagonales (combinan dos direcciones)
-    if (top && left) cmd = 1;        // Top-Left
-    else if (top && right) cmd = 2;  // Top-Right
-    else if (bottom && left) cmd = 3; // Bottom-Left
-    else if (bottom && right) cmd = 4; // Bottom-Right
-    // Direcciones rectas
-    else if (top) cmd = 5;    // Top (Adelante)
-    else if (right) cmd = 6;  // Right (Girar Derecha)
-    else if (bottom) cmd = 7; // Bottom (Atrás)
-    else if (left) cmd = 8;   // Left (Girar Izquierda)
-    
+
+    if (top && left) cmd = 1;
+    else if (top && right) cmd = 2;
+    else if (bottom && left) cmd = 3;
+    else if (bottom && right) cmd = 4;
+    else if (top) cmd = 5;
+    else if (right) cmd = 6;
+    else if (bottom) cmd = 7;
+    else if (left) cmd = 8;
+
+
     processCommand(cmd);
-    
-    // Debug: mostrar información
+
     const char* direction = "";
-    switch(cmd) {
-      case 1: direction = "Adelante-Izquierda"; break;
-      case 2: direction = "Adelante-Derecha"; break;
-      case 3: direction = "Atrás-Izquierda"; break;
-      case 4: direction = "Atrás-Derecha"; break;
-      case 5: direction = "Adelante"; break;
-      case 6: direction = "Girar Derecha"; break;
-      case 7: direction = "Atrás"; break;
-      case 8: direction = "Girar Izquierda"; break;
-      default: direction = "Parado";
+    switch (cmd) {
+      case 1: direction = "↖ Arriba-Izquierda"; break;
+      case 2: direction = "↗ Arriba-Derecha"; break;
+      case 3: direction = "↙ Abajo-Izquierda"; break;
+      case 4: direction = "↘ Abajo-Derecha"; break;
+      case 5: direction = "↑ Arriba"; break;
+      case 6: direction = "→ Derecha"; break;
+      case 7: direction = "↓ Abajo"; break;
+      case 8: direction = "← Izquierda"; break;
+      default: direction = "■ Detenido";
     }
-    Serial.printf("X: %d Y: %d → %s (Comando %d)\n", x, y, direction, cmd);
+    Serial.printf("Dirección detectada: %s (CMD %d)\n", direction, cmd);
   }
-  
-  // Timeout: si no se reciben comandos, detener el auto
-  if (millis() - lastReceived > TIMEOUT && currentCommand != 0) {
-    stopAllMotors();
-    currentCommand = 0;
-    Serial.println("Timeout, deteniendo auto.");
+
+  if (millis() - lastReceived > TIMEOUT && currentCmd != 0) {
+    frenar();
+    currentCmd = 0;
+    Serial.println("⏱ Timeout → Frenando auto.");
   }
-  
+
   delay(20);
 }
