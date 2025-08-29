@@ -16,19 +16,18 @@ int lastX = -9999, lastY = -9999;
 int sendInterval = 100; // ms
 long lastSendTime = 0;
 
-String puertoBluetooth = "COM7"; // COMX ← CAMBIAR POR TU PUERTO BLUETOOTH (Ej: "COM4")
-
+String puertoBluetooth = "COM7";
 void setup() {
   size(640, 480);
   println("Puertos serie disponibles:");
 
-// opción 1 → más clara
+
 String[] puertos = Serial.list();
 for (int i = 0; i < puertos.length; i++) {
   println("[" + i + "] " + puertos[i]);
 }
 
-  // Inicializar cámara
+  // Inicializar camara
   String[] cameras = Capture.list();
   if (cameras.length > 1) {
     println("Usando cámara: " + cameras[1]);
@@ -37,7 +36,7 @@ for (int i = 0; i < puertos.length; i++) {
     println("Usando cámara: " + cameras[0]);
     cam = new Capture(this, 640, 480, cameras[0]);
   } else {
-    println("ERROR: No se encontraron cámaras.");
+    println("ERROR: No se encontraron camaras.");
     exit();
   }
   cam.start();
@@ -76,9 +75,9 @@ void connectBluetooth() {
     bt.clear();
     delay(1000);
     btConnected = true;
-    println("✓ Bluetooth conectado en " + puertoBluetooth);
+    println("Bluetooth conectado en " + puertoBluetooth);
   } catch (Exception e) {
-    println("❌ Error al conectar Bluetooth: " + e.getMessage());
+    println("Error al conectar Bluetooth: " + e.getMessage());
     btConnected = false;
   }
 }
