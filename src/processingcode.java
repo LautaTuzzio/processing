@@ -21,6 +21,13 @@ String puertoBluetooth = "COM7"; // COMX ← CAMBIAR POR TU PUERTO BLUETOOTH (Ej
 
 void setup() {
   size(640, 480);
+  println("Puertos serie disponibles:");
+
+// opción 1 → más clara
+String[] puertos = Serial.list();
+for (int i = 0; i < puertos.length; i++) {
+  println("[" + i + "] " + puertos[i]);
+}
 
   // Inicializar cámara
   String[] cameras = Capture.list();
