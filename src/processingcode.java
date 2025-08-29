@@ -30,13 +30,13 @@ for (int i = 0; i < puertos.length; i++) {
   // Inicializar camara
   String[] cameras = Capture.list();
   if (cameras.length > 1) {
-    println("Usando cámara: " + cameras[1]);
+    println("Usando camara: " + cameras[1]);
     cam = new Capture(this, 640, 480, cameras[1]);
   } else if (cameras.length > 0) {
-    println("Usando cámara: " + cameras[0]);
+    println("Usando camara: " + cameras[0]);
     cam = new Capture(this, 640, 480, cameras[0]);
   } else {
-    println("ERROR: No se encontraron camaras.");
+    println("ERROR: No se encontraron camaras");
     exit();
   }
   cam.start();
