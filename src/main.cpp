@@ -15,11 +15,18 @@ BluetoothSerial SerialBT;
 #define IN3_TRA 18 // Trasero - Derecha Adelante
 #define IN4_TRA 19 // Trasero - Derecha Atras
 
+// Pines ultrasonico trasero
+#define TRIG_PIN 23
+#define ECHO_PIN 22
+
+
+const int THRESHOLD_CM = 30; 
+
 int currentCmd = 0;
 unsigned long lastReceived = 0;
 const unsigned long TIMEOUT = 1000;
 
-// FUNCIONES DE MOVIMIENTO
+
 void adelante() {
   digitalWrite(IN1_DEL, HIGH);
   digitalWrite(IN2_DEL, LOW);
@@ -80,9 +87,34 @@ void frenar() {
   digitalWrite(IN4_TRA, LOW);
 }
 
-// PROCESAR COMANDO
+
+long medirDistanciaCM() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  long duracion = pulseIn(ECHO_PIN, HIGH, 20000);
+  long distancia = duracion * 0.034 / 2;
+  return distancia;
+}
+
+
 void processCommand(int cmd) {
   frenar();
+
+  long distancia = medirDistanciaCM();
+  Serial.printf("Distancia trasera: %ld cm\n", distancia);
+
+
+  if ((cmd == 3 || cmd == 4 || cmd == 7) && distancia <= THRESHOLD_CM) {
+    Serial.println("Obstáculo detectado atrás, frenando");
+    frenar();
+    currentCmd = 0;
+    return; 
+  }
 
   switch (cmd) {
     case 1: adelante(); izquierda(); break;
@@ -99,6 +131,7 @@ void processCommand(int cmd) {
   currentCmd = cmd;
 }
 
+
 void setup() {
   Serial.begin(115200);
 
@@ -111,6 +144,9 @@ void setup() {
   pinMode(IN2_TRA, OUTPUT);
   pinMode(IN3_TRA, OUTPUT);
   pinMode(IN4_TRA, OUTPUT);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
 
   frenar();
 
@@ -127,9 +163,8 @@ void loop() {
     // Mostrar coordenadas crudas de la mano
     Serial.printf("Coords → X: %d | Y: %d\n", x, y);
 
-        int cmd = 0;
+    int cmd = 0;
     const int threshold = 50;
-
 
     bool top = y > threshold;     
     bool bottom = y < -threshold; 
@@ -144,7 +179,6 @@ void loop() {
     else if (right) cmd = 6;
     else if (bottom) cmd = 7;
     else if (left) cmd = 8;
-
 
     processCommand(cmd);
 
